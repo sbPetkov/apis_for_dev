@@ -1,23 +1,28 @@
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import React from "react";
 import { Tabs, Redirect } from "expo-router";
-import { StyleSheet } from "react-native";
+import getIcon from '../../icons';
 
-const TabIcon = ({ icon, color, name, focused }) => {
+
+
+
+const TabIcon = ({localIcon, color, name, focused, iconName }) => {
   return (
     <View
-      style={{
+      style={[{
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 2
-      }}
+        // justifyContent: "center",
+        // width: 100,
+        gap: 10
+      }, focused ? {marginRight: 20} : {}]}  // Here must find solution about the expanding on focus tab
     >
-      <Image
-        source={icon}
+      {getIcon(iconName, color)}
+      {/* <Image
+        source={localIcon}
         style={{ resizeMode: "contain", height: 35, tintColor: color }}
-      />
-      <Text style={{ color: color, fontSize: 18 }}>
+      /> */}
+      <Text style={[styles.tabIconText, {color: color}]}>
         {focused ? name : null}
       </Text>
     </View>
@@ -28,58 +33,62 @@ const TabsLayout = () => {
   return (
     <Tabs
       screenOptions={{
+        headerTransparent: true,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
         tabBarItemStyle: styles.tabBarItem,
-        headerShown: false
+        headerShown: false,
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="home/index"
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) =>
             <TabIcon
-              icon={require("../../assets/tabIcons/home.png")}
               color={color}
               name="Home"
+              iconName={'home'}
               focused={focused}
             />
         }}
       />
       <Tabs.Screen
-        name="list"
+        name="tips/index"
         options={{
-          title: "List",
+          title: "Tips",
           tabBarIcon: ({ color, focused }) =>
             <TabIcon
-              // icon={require('../../assets/tabIcons/list.png')}
+              // localIcon={require('../../assets/tabIcons/home.png')}
               color={color}
-              name="List"
+              name="Tips"
+              iconName={'droplet'}
               focused={focused}
             />
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="user/index"
         options={{
-          title: "Profile",
+          title: "User",
           tabBarIcon: ({ color, focused }) =>
             <TabIcon
-              // icon={require('../../assets/tabIcons/profile.png')}
+              // localIcon={require('../../assets/tabIcons/home.png')}
               color={color}
-              name="Profile"
+              iconName={'user'}
+              name="User"
               focused={focused}
             />
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="settings/index"
         options={{
           title: "Settings",
           tabBarIcon: ({ color, focused }) =>
             <TabIcon
-              // icon={require('../../assets/tabIcons/settings.png')}
+              // localIcon={require('../../assets/tabIcons/home.png')}
+              iconName={'settings'}
               color={color}
               name="Settings"
               focused={focused}
@@ -96,13 +105,17 @@ const styles = StyleSheet.create({
   tabBar: {
     display: "flex",
     // flexDirection: 'row',
-    alignItems: "center",
-    justifyContent: "center",
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    // alignItems: "center",
+    // justifyContent: "center",
     paddingLeft: 20,
     paddingRight: 20,
     borderTopWidth: 0,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25
   },
   tabBarItem: {
     flex: 1,
@@ -110,9 +123,8 @@ const styles = StyleSheet.create({
     // flexDirection: 'row',
     alignItems: "center",
     justifyContent: "center"
+  },
+  tabIconText: {
+     fontSize: 15,
   }
-  // tabBarLabel: {
-  //   fontSize: 20,
-  //   fontWeight: 'bold',
-  // },
 });
