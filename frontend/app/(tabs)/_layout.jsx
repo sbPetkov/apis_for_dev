@@ -1,7 +1,7 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import React from "react";
 import { Tabs, Redirect } from "expo-router";
-import getIcon from '../../icons';
+import getIcon from '../../utils/icons';
 
 
 
