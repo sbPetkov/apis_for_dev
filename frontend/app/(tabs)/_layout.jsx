@@ -6,6 +6,7 @@ import getIcon from '../../utils/icons';
 
 
 
+
 const TabIcon = ({localIcon, color, name, focused, iconName }) => {
   return (
     <View
@@ -14,8 +15,8 @@ const TabIcon = ({localIcon, color, name, focused, iconName }) => {
         alignItems: "center",
         // justifyContent: "center",
         // width: 100,
-        gap: 10
-      }, focused ? {marginRight: 20} : {}]}  // Here must find solution about the expanding on focus tab
+        gap: 10 
+      }, focused ? {} : {}]}  // Here must find solution about the expanding on focus tab
     >
       {getIcon(iconName, color)}
       {/* <Image
@@ -91,6 +92,34 @@ const TabsLayout = () => {
               iconName={'settings'}
               color={color}
               name="Settings"
+              focused={focused}
+            />
+        }}
+      />
+      <Tabs.Screen
+        name="statistic/index"
+        options={{
+          title: "Statistics",
+          tabBarIcon: ({ color, focused }) =>
+            <TabIcon
+              // localIcon={require('../../assets/tabIcons/home.png')}
+              iconName={'bar-chart'}
+              color={color}
+              name="Statistics"
+              focused={focused}
+            />
+        }}
+      />
+      <Tabs.Screen
+        name="troubleshoot/index"
+        options={{
+          title: "Trouble",
+          tabBarIcon: ({ color, focused }) =>
+            <TabIcon
+              // localIcon={require('../../assets/tabIcons/home.png')}
+              iconName={'emergency-share'}
+              color={color}
+              name="Trouble"
               focused={focused}
             />
         }}
