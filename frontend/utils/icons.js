@@ -45,6 +45,14 @@ const getIcon = (name,color) => {
         return (
           <SimpleLineIcons name={name} size={35} color={color} />
         );
+      case 'bar-chart':
+        return (
+          <MaterialIcons name={name} size={35} color={color} />
+        );
+      case 'emergency-share':
+        return (
+          <MaterialIcons name={name} size={35} color={color} />
+        );
       default:
         break;
     }
