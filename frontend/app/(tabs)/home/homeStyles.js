@@ -4,7 +4,6 @@ const CARD_HEIGHT = 170;
 
 export const styles = StyleSheet.create({
   container: {
-    width: "88%",
     flex: 1,
     flexDirection: "column",
     gap: 3,
@@ -13,6 +12,7 @@ export const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    paddingBottom: 78,
   },
   headerTitle: {
     fontSize: 25,
