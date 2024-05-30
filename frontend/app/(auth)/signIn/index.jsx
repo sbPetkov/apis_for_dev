@@ -36,6 +36,7 @@ const SignIn = () => {
         title="Login" //Possible to make its fields and functionality on submit depending on the title, whether is Login or Register 
         onFormChange={handleFormChange}
         // keyboardType="email-address"
+        onLogin = {handleLogin}
         />
       </View>
    </SafeAreaView>
