@@ -21,7 +21,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ('first_name',
                   'last_name',
                   'email',
-                  'client_number',
+                  'city',
                   'phone_number',
                   'date_joined',
                   'profile_picture')

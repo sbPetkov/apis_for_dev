@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fd15f9b6-450d-49c9-b6f6-f312d642fc3d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/api/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/api/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.txt" beforeDir="false" afterPath="$PROJECT_DIR$/test.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +40,7 @@
     "Python.views.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "water__usage__added",
+    "git-widget-placeholder": "minor-fixes-on-settings",
     "last_opened_file_path": "/Users/svilenpetkov/Documents/GitHub/Project-dev/backend/new",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -90,6 +87,7 @@
       <workItem from="1716839857410" duration="720000" />
       <workItem from="1716886486913" duration="1751000" />
       <workItem from="1716966773056" duration="2907000" />
+      <workItem from="1716973835957" duration="2468000" />
     </task>
     <servers />
   </component>
