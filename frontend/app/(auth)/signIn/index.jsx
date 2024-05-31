@@ -15,7 +15,7 @@ const SignIn = () => {
 
   const handleFormChange = (newValues) => {
     setFormValues(newValues);
-    console.log(newValues)
+    // console.log(newValues)
   };
 
   const handleLogin = () => {
@@ -34,9 +34,9 @@ const SignIn = () => {
         />
         <AuthForm 
         title="Login" //Possible to make its fields and functionality on submit depending on the title, whether is Login or Register 
-        onFormChange={handleFormChange}
+        onFormChange = {handleFormChange}
         // keyboardType="email-address"
-        onLogin = {handleLogin}
+        onLogin={handleLogin}
         />
       </View>
    </SafeAreaView>

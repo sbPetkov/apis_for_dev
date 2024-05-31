@@ -28,21 +28,22 @@ const FormField = ({title, value, placeholder, onFormChange, formValues, setForm
   )
 }
 
-const AuthForm = ({title, value, placeholder, onFormChange, ...props}) => {
+const AuthForm = ({title, value, placeholder, onFormChange, onLogin, ...props}) => {
   let errorMsg = '';
   const [formValues, setFormValues] = React.useState({
     email: '',
     password: '',
   })
-  handleChangeText = (e) => {
+  const handleChangeText = (e) => {
     console.log(e.value)
   }
+
   return (
     <>
       <FormField title={"Е-Поща"} type={'email'} onFormChange={onFormChange} formValues={formValues} setFormValues={setFormValues} />
       <FormField title={"Парола"} type={'password'} onFormChange={onFormChange} formValues={formValues} setFormValues={setFormValues} />
       <Text style={styles.errorMsg}>{errorMsg}</Text>
-      <CustomButton title={'Влез'} additionalStyles={{marginTop: 15,}}/>
+      <CustomButton title={'Влез'} additionalStyles={{marginTop: 15,}} handlePress={onLogin}/>
       <Text style={{fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase'}}>или</Text>
       <View style={styles.thirdPartyAuthBox}>
         <CustomButton 

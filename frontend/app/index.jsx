@@ -22,7 +22,7 @@ const AuthLayout = () => {
       <Text style={styles.welcomeMessage}>Добре дошли в Aquaware, вашият незаменим партнъор в следенето и пестенето на вода!  {/* на потреблението на вода, където може да се научите и да пестите вода с нашите безценни съвети! */}</Text>
       {/* <Text>Sign-up</Text> */}
       {/* <Link href="/sign-up">Влез</Link> */}
-      <CustomButton title={'Влезте в профила си'} handlePress={() =>  router.push('signIn/sign-in')
+      <CustomButton title={'Влезте в профила си'} handlePress={() =>  router.push('signIn')
       }/>
       {/* <CustomButton title={'Създай профил'} handlePress={() => console.log('click') }/> */}
     </SafeAreaView>
