@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
       gap: 20
     },
     image: {
-        width: 150,
+        width: 160,
         height: 150,
         // paddingBottom: 0,
       },
