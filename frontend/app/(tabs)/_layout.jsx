@@ -77,7 +77,7 @@ const TabsLayout = () => {
               // localIcon={require('../../assets/tabIcons/home.png')}
               color={color}
               iconName={'user'}
-              name="User"
+              name="Users"
               focused={focused}
             />
         }}

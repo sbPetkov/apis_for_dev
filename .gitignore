@@ -1,5 +1,10 @@
+auth--login
+.idea/Project-dev.iml
+.idea/workspace.xml
+
 
 /backend/venv
 /backend/venv/bin
 /backend/venv
 /.idea
+main
