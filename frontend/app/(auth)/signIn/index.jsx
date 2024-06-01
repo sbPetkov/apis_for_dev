@@ -8,7 +8,7 @@ import AuthForm from '../../components/authForm'
 
 import {styles} from "./sign-inStyles"
 
-import AquawareLogo from "../../../assets/AquwareLogoSVG.svg"
+import AquawareLogo from "../../../assets/AquawareLogo.svg"
 
 const SignIn = () => {
   const [formValues, setFormValues] = React.useState({ email: '', password: '' });
@@ -24,6 +24,8 @@ const SignIn = () => {
 
     console.log('Logging in with:', formValues);
   };
+
+  // TODO: When Google & Facebook authentication is ready to implement, pass the handler trough props
   return (
    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
