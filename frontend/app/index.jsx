@@ -7,7 +7,7 @@ import { Redirect, router } from 'expo-router';
 
 import globalStyles  from './globalStyles';
 
-import AquawareLogo from '../assets/AquwareLogoSVG.svg'
+import AquawareLogo from '../assets/AquawareLogo.svg'
 import WaterIcon from '../assets/authSvg/IconWater.svg'
 
 const AuthLayout = () => {
@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   image: {
-    width: 150,
-    height: 150
+    width: 160,
+    height: 150,
   }
 
   
