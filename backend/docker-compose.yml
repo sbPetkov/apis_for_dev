@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  api:
+    volumes:
+      - static-data:/static
+      - media-data:/media
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - "db"
+    restart: always
+
+  db:
+    image: postgres:13-alpine
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgres/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+
+  nginx:
+    build: ./nginx
+    volumes:
+      - static-data:/static
+      - media-data:/media
+    ports:
+      - "81:81"
+    depends_on:
+      - "api"
+    restart: always
+
+volumes:
+  postgres-data:
+  static-data:
+  media-data:
