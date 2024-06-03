@@ -7,6 +7,9 @@ from api.profiles_api.models import Profile
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        profile = Profile.objects.create(user=instance)
+        profile.email = instance.username
+        profile.save()
     else:
+        instance.profile.email = instance.username
         instance.profile.save()

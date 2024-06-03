@@ -7,7 +7,8 @@ from . import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("profile/", include('api.profiles_api.urls')),
-    path("advices/", include('api.advices.urls'))
+    path("advices/", include('api.advices.urls')),
+    path("water-management/", include('api.water_management.urls')),
 ]
 
 if settings.DEBUG:

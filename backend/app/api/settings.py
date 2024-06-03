@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 
     'api.profiles_api',
     'api.advices.apps.AdvicesConfig',
+    'api.water_management.apps.WaterManagementConfig',
     'rest_framework',
     'rest_framework.authtoken',
 
