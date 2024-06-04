@@ -127,7 +127,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
+MEDIA_URL = 'http://ec2-18-234-44-48.compute-1.amazonaws.com/media/'
 
 STATIC_ROOT = '/static/'
 MEDIA_ROOT = '/media/'
