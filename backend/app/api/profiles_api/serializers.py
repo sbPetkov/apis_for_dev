@@ -18,11 +18,13 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ('first_name',
-                  'last_name',
-                  'email',
-                  'city',
-                  'phone_number',
-                  'date_joined',
-                  'profile_picture')
-        lookup_field = 'user_id'
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+            'city',
+            'phone_number',
+            'date_joined',
+            'profile_picture',
+            'language'
+        )

@@ -9,6 +9,9 @@ urlpatterns = [
     path("profile/", include('api.profiles_api.urls')),
     path("advices/", include('api.advices.urls')),
     path("water-management/", include('api.water_management.urls')),
+    path("facebook/", include('api.facebook_login.urls')),
+    path('email/', include('api.email_services.urls')),
+
 ]
 
 if settings.DEBUG:

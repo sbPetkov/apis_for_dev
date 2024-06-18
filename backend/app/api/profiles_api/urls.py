@@ -4,6 +4,6 @@ from api.profiles_api.views import CreateUserView, ProfileRetrieveUpdateDestroy,
 
 urlpatterns = [
     path('create/', CreateUserView.as_view(), name='create-user'),
-    path('details/<int:user_id>/', ProfileRetrieveUpdateDestroy.as_view(), name='retrieve-update-delete-api-view'),
+    path('details/', ProfileRetrieveUpdateDestroy.as_view(), name='retrieve-update-delete-api-view'),
     path('login/', CustomAuthToken.as_view()),
 ]
