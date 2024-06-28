@@ -25,6 +25,7 @@ class SendEmailAPIView(generics.GenericAPIView):
 
         # Get the authenticated user
         user = request.user
+        user_phone_number = user.profile.phone_number
 
         try:
             # Get the WaterCompany instance
@@ -33,12 +34,13 @@ class SendEmailAPIView(generics.GenericAPIView):
             return Response({"error": "WaterCompany not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Construct the email content
-        email_subject = f"New Issue Reported: {issue}"
+        email_subject = f"Докладване на проблем: {issue}"
         email_message = (
-            f"Issue: {issue}\n"
-            f"Address: {address}\n"
-            f"User: {user.username}\n\n"
-            f"Content:\n{content}"
+            f"Вид: {issue}\n"
+            f"Адрес: {address}\n"
+            f"E-mail: {user.username}\n"
+            f"Телефон: {user_phone_number}\n\n"
+            f"Детайли:\n{content}"
         )
         recipient_email = water_company.email
 

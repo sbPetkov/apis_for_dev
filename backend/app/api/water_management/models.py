@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 
+from api.profiles_api.models import get_unique_filename
+
 
 class WaterCompany(models.Model):
     MAX_COMPANY_NAME_LENGTH = 30
@@ -35,6 +37,56 @@ class ClientNumber(models.Model):
 
     def __str__(self):
         return self.client_number
+
+
+class PropertyTypes(models.Model):
+    TYPE_MAX_LENGTH = 30
+
+    type = models.CharField(max_length=TYPE_MAX_LENGTH)
+    image = models.ImageField(upload_to=get_unique_filename)
+
+    def __str__(self):
+        return self.type
+
+
+class RoomTypes(models.Model):
+    class RoomType(models.TextChoices):
+        KITCHEN = 'KITCHEN', 'Kitchen'
+        BATHROOM = 'BATHROOM', 'Bathroom'
+        TOILET = 'TOILET', 'Toilet'
+        LAUNDRY = 'LAUNDRY', 'Laundry'
+        GARDEN = 'GARDEN', 'Garden'
+        GARAGE = 'GARAGE', 'Garage'
+
+    room_type = models.CharField(
+        max_length=20,
+        choices=RoomType.choices,
+        default=RoomType.KITCHEN,
+    )
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.name} - {self.room_type}"
+
+
+class Property(models.Model):
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE)
+
+    type = models.ForeignKey(PropertyTypes,
+                             on_delete=models.CASCADE)
+
+    room_types = models.ManyToManyField(RoomTypes,
+                                        blank=True,
+                                        null=True)
+
+    num_people = models.PositiveIntegerField(default=0)
+
+    client_number = models.ForeignKey(ClientNumber,
+                                      on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Property owned by {self.user} - {self.type}"
 
 
 class WaterMeter(models.Model):

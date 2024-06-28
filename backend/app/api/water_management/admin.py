@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ClientNumber, WaterMeter, WaterMeterReading, WaterCompany
+from .models import ClientNumber, WaterMeter, WaterMeterReading, WaterCompany, Property, RoomTypes, PropertyTypes
 
 
 @admin.register(ClientNumber)
@@ -23,3 +23,18 @@ class WaterMeterReadingAdmin(admin.ModelAdmin):
 @admin.register(WaterCompany)
 class WaterCompanyAdmin(admin.ModelAdmin):
     list_display = ('name', 'phone_number', 'email')
+
+
+@admin.register(Property)
+class PropertyAdmin(admin.ModelAdmin):
+    list_display = ('user', 'type', 'num_people', 'client_number')
+
+
+@admin.register(RoomTypes)
+class RoomTypesAdmin(admin.ModelAdmin):
+    list_display = ('name', 'room_type')
+
+
+@admin.register(PropertyTypes)
+class PropertyTypesAdmin(admin.ModelAdmin):
+    list_display = ('type', 'image')
