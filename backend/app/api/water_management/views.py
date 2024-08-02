@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions, generics
 from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from .models import WaterCompany, ClientNumber, WaterMeter, PropertyTypes, Property, RoomTypes, WaterMeterReading
 from .serializers import WaterCompanySerializer, ClientNumberSerializer, WaterMeterSerializer, PropertySerializer, \
-    RoomTypesSerializer, WaterMeterReadingSerializer
+    RoomTypesSerializer, WaterMeterReadingSerializer, PropertyTypeSerializer, WaterMeterAverageConsumptionSerializer
 
 
 class WaterCompanyViewSet(viewsets.ModelViewSet):
@@ -58,6 +58,13 @@ class UserWaterMetersAPIView(APIView):
             {"detail": "Water meter created successfully."},
             status=status.HTTP_201_CREATED
         )
+
+
+class PropertyTypeListView(APIView):
+    def get(self, request):
+        property_types = PropertyTypes.objects.all()
+        serializer = PropertyTypeSerializer(property_types, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PropertyCreateView(APIView):
@@ -223,12 +230,12 @@ class WaterMeterReadingView(APIView):
         readings = []
 
         for reading_data in readings_data:
-            meter_number = reading_data.get('meter_number')
+            water_meter_id = reading_data.get('water_meter_id')
             value = reading_data.get('value')
 
-            water_meter = water_meters.filter(meter_number=meter_number).first()
+            water_meter = water_meters.filter(id=water_meter_id).first()
             if not water_meter:
-                return Response({'error': f'Water meter with number {meter_number} not found'},
+                return Response({'error': f'Water meter with id {water_meter_id} not found'},
                                 status=status.HTTP_404_NOT_FOUND)
 
             reading = WaterMeterReading(
@@ -249,4 +256,61 @@ class WaterMeterReadingView(APIView):
 
         readings = WaterMeterReading.objects.filter(water_meter__in=water_meters)
         serializer = WaterMeterReadingSerializer(readings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class WaterMeterReadingDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = WaterMeterReading.objects.all()
+    serializer_class = WaterMeterReadingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ClientNumberAverageConsumptionView(APIView):
+    def get(self, request, client_number_id):
+        client_number = get_object_or_404(ClientNumber, id=client_number_id)
+        property_instance = client_number.property_set.first()  # Assuming a one-to-one relationship
+        water_meters = client_number.water_meters.all()
+
+        total_value_diff = 0
+        total_days_diff = 0
+        insufficient_data = False
+
+        for water_meter in water_meters:
+            average_consumption = water_meter.calculate_average_monthly_consumption()
+            if isinstance(average_consumption, str):
+                insufficient_data = True
+                continue
+
+            value_diff = average_consumption['average_monthly_consumption'] / 30 * (average_consumption['approximate'] * 30 + (not average_consumption['approximate'] * 1))
+            days_diff = 30 if average_consumption['approximate'] else 1
+
+            total_value_diff += value_diff
+            total_days_diff += days_diff
+
+        if insufficient_data and total_days_diff == 0:
+            return Response({'error': 'Not enough data to calculate average monthly consumption for some or all meters.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        average_daily_consumption = total_value_diff / total_days_diff
+        combined_average_monthly_consumption = average_daily_consumption * 30
+        combined_average_monthly_consumption = round(combined_average_monthly_consumption, 3)
+
+        num_people = property_instance.num_people if property_instance else 0
+        average_usage_per_person_per_week = round(combined_average_monthly_consumption / num_people / 4, 3) if num_people else 0
+
+        rooms = property_instance.room_types.all() if property_instance else []
+        num_rooms = rooms.count()
+        average_usage_per_room = round(combined_average_monthly_consumption / num_rooms, 3) if num_rooms else 0
+
+        room_usage = {room.name: average_usage_per_room for room in rooms}
+
+        result = {
+            "approximate": total_days_diff < 30,
+            "average_monthly_consumption": combined_average_monthly_consumption,
+            "num_people": num_people,
+            "average_usage_per_person_per_week": average_usage_per_person_per_week,
+            "average_usage_per_room": room_usage
+        }
+
+        serializer = WaterMeterAverageConsumptionSerializer(result)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -19,7 +19,7 @@ class WaterMeterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WaterMeter
-        fields = ['client_number', 'meter_number']
+        fields = ['id', 'client_number', 'meter_number']
 
 
 class PropertyTypeSerializer(serializers.ModelSerializer):
@@ -49,7 +49,19 @@ class RoomTypesSerializer(serializers.ModelSerializer):
 
 
 class WaterMeterReadingSerializer(serializers.ModelSerializer):
+    water_meter_id = serializers.IntegerField(source='water_meter.id', read_only=True)
+
     class Meta:
         model = WaterMeterReading
-        fields = ['id', 'water_meter', 'user', 'value', 'date']
+        fields = ['id', 'water_meter_id', 'user', 'value', 'date']
         read_only_fields = ['user']
+
+
+class WaterMeterAverageConsumptionSerializer(serializers.Serializer):
+    approximate = serializers.BooleanField()
+    average_monthly_consumption = serializers.FloatField()
+    num_people = serializers.IntegerField()
+    average_usage_per_person_per_week = serializers.FloatField()
+    average_usage_per_room = serializers.DictField(child=serializers.FloatField())
+
+
