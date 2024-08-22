@@ -7,7 +7,8 @@ from rest_framework.views import APIView
 
 from .models import WaterCompany, ClientNumber, WaterMeter, PropertyTypes, Property, RoomTypes, WaterMeterReading
 from .serializers import WaterCompanySerializer, ClientNumberSerializer, WaterMeterSerializer, PropertySerializer, \
-    RoomTypesSerializer, WaterMeterReadingSerializer, PropertyTypeSerializer, WaterMeterAverageConsumptionSerializer
+    RoomTypesSerializer, WaterMeterReadingSerializer, PropertyTypeSerializer, WaterMeterAverageConsumptionSerializer, \
+    WaterMeterReadingWithPropertySerializer
 
 
 class WaterCompanyViewSet(viewsets.ModelViewSet):
@@ -221,10 +222,11 @@ class PropertyRoomDetailView(APIView):
 
 
 class WaterMeterReadingView(APIView):
-    def post(self, request, property_id):
-        property_instance = get_object_or_404(Property, id=property_id)
-        client_number = property_instance.client_number
-        water_meters = client_number.water_meters.all()
+    def post(self, request):
+        user = request.user
+
+        # Retrieve all water meters related to properties associated with the user
+        water_meters = WaterMeter.objects.filter(client_number__users=user)
 
         readings_data = request.data.get('readings', [])
         readings = []
@@ -240,7 +242,7 @@ class WaterMeterReadingView(APIView):
 
             reading = WaterMeterReading(
                 water_meter=water_meter,
-                user=request.user,
+                user=user,  # Save the reading with the current user
                 value=value
             )
             reading.save()
@@ -249,14 +251,50 @@ class WaterMeterReadingView(APIView):
         serializer = WaterMeterReadingSerializer(readings, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def get(self, request, property_id):
-        property_instance = get_object_or_404(Property, id=property_id)
-        client_number = property_instance.client_number
-        water_meters = client_number.water_meters.all()
+    def get(self, request):
+        user = request.user
 
-        readings = WaterMeterReading.objects.filter(water_meter__in=water_meters)
-        serializer = WaterMeterReadingSerializer(readings, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Retrieve all water meters related to properties associated with the user
+        water_meters = WaterMeter.objects.filter(client_number__users=user)
+
+        # Get all readings for these water meters, limit to the last 5, ordered by date descending
+        readings = WaterMeterReading.objects.filter(
+            water_meter__in=water_meters
+        ).order_by('-date')[:5]
+
+        # Manually construct the response data to include property information
+        response_data = []
+        for reading in readings:
+            # Fetch all properties associated with the water meter's client number
+            properties = Property.objects.filter(client_number=reading.water_meter.client_number)
+            property_instance = properties.first()  # Get the first property (adjust if multiple properties exist)
+
+            if property_instance:
+                property_data = {
+                    "id": reading.id,
+                    "water_meter_id": reading.water_meter.id,
+                    "water_meter_number": reading.water_meter.meter_number,
+                    "user": reading.user.id,
+                    "value": reading.value,
+                    "date": reading.date,
+                    "property_id": property_instance.id,
+                    "property_type": property_instance.type.type,  # Assuming 'type' is the correct field
+                }
+                response_data.append(property_data)
+            else:
+                # Handle the case where no property is found for the client number
+                response_data.append({
+                    "id": reading.id,
+                    "water_meter_id": reading.water_meter.id,
+                    "water_meter_number": reading.water_meter.meter_number,
+                    "user": reading.user.id,
+                    "value": reading.value,
+                    "date": reading.date,
+                    "property_id": None,
+                    "property_type": None,
+                })
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class WaterMeterReadingDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -266,7 +304,11 @@ class WaterMeterReadingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ClientNumberAverageConsumptionView(APIView):
+
     def get(self, request, client_number_id):
+
+        MAX_WATER_USAGE_PER_PERSON_FOR_WEEK = 650
+
         client_number = get_object_or_404(ClientNumber, id=client_number_id)
         property_instance = client_number.property_set.first()  # Assuming a one-to-one relationship
         water_meters = client_number.water_meters.all()
@@ -287,11 +329,11 @@ class ClientNumberAverageConsumptionView(APIView):
             total_value_diff += value_diff
             total_days_diff += days_diff
 
-        if insufficient_data and total_days_diff == 0:
-            return Response({'error': 'Not enough data to calculate average monthly consumption for some or all meters.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        # if insufficient_data and total_days_diff == 0:
+        #     return Response({'error': 'Not enough data to calculate average monthly consumption for some or all meters.'},
+        #                     status=status.HTTP_400_BAD_REQUEST)
 
-        average_daily_consumption = total_value_diff / total_days_diff
+        average_daily_consumption = total_value_diff / (total_days_diff + 1)
         combined_average_monthly_consumption = average_daily_consumption * 30
         combined_average_monthly_consumption = round(combined_average_monthly_consumption, 3)
 
@@ -304,12 +346,17 @@ class ClientNumberAverageConsumptionView(APIView):
 
         room_usage = {room.name: average_usage_per_room for room in rooms}
 
+        max_water_usage_for_property_per_month = MAX_WATER_USAGE_PER_PERSON_FOR_WEEK * num_people * 4
+        current_water_usage_for_person_per_room = combined_average_monthly_consumption / num_rooms / num_people
+
         result = {
             "approximate": total_days_diff < 30,
             "average_monthly_consumption": combined_average_monthly_consumption,
             "num_people": num_people,
             "average_usage_per_person_per_week": average_usage_per_person_per_week,
-            "average_usage_per_room": room_usage
+            "average_usage_per_room": room_usage,
+            "max_water_usage_for_property_per_month": max_water_usage_for_property_per_month,
+            "current_water_usage_for_person_per_room": current_water_usage_for_person_per_room,
         }
 
         serializer = WaterMeterAverageConsumptionSerializer(result)

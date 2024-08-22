@@ -9,7 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.profiles_api.models import Profile
-from api.profiles_api.serializers import UserSerializer, ProfileSerializer
+from api.profiles_api.serializers import UserSerializer, ProfileSerializer, DeactivateAccountSerializer
+
 
 
 @permission_classes([AllowAny])
@@ -45,3 +46,14 @@ class CustomAuthToken(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'user_id': user.pk}, status=status.HTTP_200_OK)
+
+
+class DeactivateAccountView(generics.GenericAPIView):
+    serializer_class = DeactivateAccountSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Account has been deactivated."}, status=status.HTTP_200_OK)

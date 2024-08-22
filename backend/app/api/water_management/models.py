@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
@@ -133,7 +134,8 @@ class WaterMeter(models.Model):
 
 
 class WaterMeterReading(models.Model):
-    VALUE_MAX_LENGTH = 10
+    VALUE_MAX_DIGITS = 10  # Total number of digits (including those after the decimal)
+    VALUE_DECIMAL_PLACES = 3  # Number of digits after the decimal point
 
     water_meter = models.ForeignKey(WaterMeter,
                                     on_delete=models.CASCADE,
@@ -143,7 +145,11 @@ class WaterMeterReading(models.Model):
                              on_delete=models.CASCADE,
                              related_name='water_meter_readings')
 
-    value = models.IntegerField()
+    value = models.DecimalField(
+        max_digits=VALUE_MAX_DIGITS,
+        decimal_places=VALUE_DECIMAL_PLACES,
+        validators=[MinValueValidator(0)]
+    )
 
     date = models.DateTimeField(auto_now_add=True)
 
@@ -160,6 +166,7 @@ class WaterMeterReading(models.Model):
             if last_reading and (self.value < last_reading.value or self.value > last_reading.value + 1000):
                 raise ValidationError(
                     "The value should not be less than the previous reading or greater "
-                    "than 1000 to the last saved reading.")
+                    "than 1000 to the last saved reading."
+                )
 
         super().save(*args, **kwargs)
