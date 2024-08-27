@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from api.profiles_api.models import Profile
@@ -26,7 +27,12 @@ class ProfileSerializer(serializers.ModelSerializer):
             'phone_number',
             'date_joined',
             'profile_picture',
-            'language'
+            'language',
+            'push',
+            'email_notification',
+            'daily',
+            'weekly',
+            'monthly',
         )
 
 
@@ -44,3 +50,14 @@ class DeactivateAccountSerializer(serializers.Serializer):
         user.is_active = False
         user.save()
         return user
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is not correct")
+        return value

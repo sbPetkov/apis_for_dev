@@ -240,6 +240,22 @@ class WaterMeterReadingView(APIView):
                 return Response({'error': f'Water meter with id {water_meter_id} not found'},
                                 status=status.HTTP_404_NOT_FOUND)
 
+            # Retrieve the latest reading for this water meter
+            last_reading = WaterMeterReading.objects.filter(
+                water_meter=water_meter
+            ).order_by('-date').first()
+
+            if last_reading and value < last_reading.value:
+                return Response(
+                    {
+                        'error': (
+                            f"New reading value {value} is less than the last recorded value "
+                            f"{last_reading.value} for water meter {water_meter.meter_number}."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             reading = WaterMeterReading(
                 water_meter=water_meter,
                 user=user,  # Save the reading with the current user
@@ -329,9 +345,9 @@ class ClientNumberAverageConsumptionView(APIView):
             total_value_diff += value_diff
             total_days_diff += days_diff
 
-        # if insufficient_data and total_days_diff == 0:
-        #     return Response({'error': 'Not enough data to calculate average monthly consumption for some or all meters.'},
-        #                     status=status.HTTP_400_BAD_REQUEST)
+        if insufficient_data and total_days_diff == 0:
+            return Response({'error': 'Not enough data to calculate'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         average_daily_consumption = total_value_diff / (total_days_diff + 1)
         combined_average_monthly_consumption = average_daily_consumption * 30

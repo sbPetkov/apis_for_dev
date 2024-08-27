@@ -9,8 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.profiles_api.models import Profile
-from api.profiles_api.serializers import UserSerializer, ProfileSerializer, DeactivateAccountSerializer
-
+from api.profiles_api.serializers import UserSerializer, ProfileSerializer, DeactivateAccountSerializer, ChangePasswordSerializer
+from rest_framework.views import APIView
 
 
 @permission_classes([AllowAny])
@@ -57,3 +57,19 @@ class DeactivateAccountView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Account has been deactivated."}, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            # Set the new password
+            request.user.set_password(serializer.validated_data['new_password'])
+            request.user.save()
+
+            return Response({"detail": "Password changed successfully"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

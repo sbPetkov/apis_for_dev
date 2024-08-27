@@ -64,6 +64,16 @@ class Profile(models.Model):
     language = models.CharField(max_length=LANGUAGE_MAX_LENGTH,
                                 default='BG')
 
+    push = models.BooleanField(default=False)
+
+    email_notification = models.BooleanField(default=False)
+
+    daily = models.BooleanField(default=False)
+
+    weekly = models.BooleanField(default=False)
+
+    monthly = models.BooleanField(default=False)
+
     def __str__(self):
         return self.user.username
 

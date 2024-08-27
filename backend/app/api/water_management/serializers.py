@@ -50,10 +50,11 @@ class RoomTypesSerializer(serializers.ModelSerializer):
 
 class WaterMeterReadingSerializer(serializers.ModelSerializer):
     water_meter_id = serializers.IntegerField(source='water_meter.id', read_only=True)
+    water_meter_number = serializers.CharField(source='water_meter.meter_number', read_only=True)
 
     class Meta:
         model = WaterMeterReading
-        fields = ['id', 'water_meter_id', 'user', 'value', 'date']
+        fields = ['id', 'water_meter_id', 'water_meter_number', 'user', 'value', 'date']
         read_only_fields = ['user']
 
 
