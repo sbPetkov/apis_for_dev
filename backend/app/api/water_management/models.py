@@ -103,34 +103,35 @@ class WaterMeter(models.Model):
         return f"Water Meter {self.meter_number} for {self.client_number}"
 
     def calculate_average_monthly_consumption(self):
-        readings = self.water_meter_readings.order_by('-date')[:2]
-        if len(readings) < 2:
+        # Get all readings ordered by date
+        readings = self.water_meter_readings.order_by('date')
+
+        if readings.count() < 2:
             return "Not enough data to calculate average monthly consumption."
 
-        first_reading = readings[1]
-        latest_reading = readings[0]
+        # Extract readings from the current month
+        latest_reading = readings.last()
+        first_reading_of_month = readings.filter(date__month=latest_reading.date.month).first()
 
-        value_diff = latest_reading.value - first_reading.value
-        days_diff = (latest_reading.date - first_reading.date).days
+        if not first_reading_of_month or first_reading_of_month == latest_reading:
+            return "Not enough data to calculate average monthly consumption."
+
+        value_diff = latest_reading.value - first_reading_of_month.value
+        days_diff = (latest_reading.date - first_reading_of_month.date).days
 
         if days_diff == 0:
             return "Invalid data: consecutive readings have the same date."
 
-        average_daily_consumption = value_diff / days_diff
-        average_daily_consumption = round(average_daily_consumption, 3)
-        average_monthly_consumption = average_daily_consumption * 30
-        average_monthly_consumption = round(average_monthly_consumption, 3)
+        average_daily_consumption = round(value_diff / days_diff, 3)
+        average_monthly_consumption = round(average_daily_consumption * 30, 3)
 
-        if days_diff < 30:
-            return {
-                "approximate": True,
-                "average_monthly_consumption": average_monthly_consumption
-            }
-        else:
-            return {
-                "approximate": False,
-                "average_monthly_consumption": average_monthly_consumption
-            }
+        approximate = days_diff < 30
+
+        return {
+            "approximate": approximate,
+            "average_monthly_consumption": average_monthly_consumption,
+            "days_diff": days_diff
+        }
 
 
 class WaterMeterReading(models.Model):

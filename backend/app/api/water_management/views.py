@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from .models import WaterCompany, ClientNumber, WaterMeter, PropertyTypes, Property, RoomTypes, WaterMeterReading
 from .serializers import WaterCompanySerializer, ClientNumberSerializer, WaterMeterSerializer, PropertySerializer, \
     RoomTypesSerializer, WaterMeterReadingSerializer, PropertyTypeSerializer, WaterMeterAverageConsumptionSerializer, \
-    WaterMeterReadingWithPropertySerializer
+    WaterMeterReadingWithPropertySerializer, PropertyUpdateSerializer
 
 
 class WaterCompanyViewSet(viewsets.ModelViewSet):
@@ -76,12 +76,11 @@ class PropertyCreateView(APIView):
         serializer = PropertySerializer(properties, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     def post(self, request):
         data = request.data
 
         try:
-            property_type = PropertyTypes.objects.get(id=data['property_type']['id'])
+            property_type = PropertyTypes.objects.get(id=data['type']['id'])
         except PropertyTypes.DoesNotExist:
             return Response({'error': 'Property type not found.'},
                             status=status.HTTP_404_NOT_FOUND)
@@ -92,16 +91,22 @@ class PropertyCreateView(APIView):
             return Response({'error': 'Water company not found.'},
                             status=status.HTTP_404_NOT_FOUND)
 
+        # Create the ClientNumber object associated with the authenticated user
         client_number_data = data['client_number']
-        client_number = ClientNumber.objects.create(water_company=water_company,
-                                                    client_number=client_number_data['client_number'])
-        client_number.users.set(client_number_data['users'])
+        client_number = ClientNumber.objects.create(
+            water_company=water_company,
+            client_number=client_number_data['client_number']
+        )
+        client_number.users.add(request.user)
 
+        # Create the Property object
         property_data = data['property']
-        property = Property.objects.create(user=request.user,
-                                           type=property_type,
-                                           num_people=property_data['num_people'],
-                                           client_number=client_number)
+        property_instance = Property.objects.create(
+            user=request.user,
+            type=property_type,
+            num_people=property_data['num_people'],
+            client_number=client_number
+        )
 
         # Create Water Meters
         water_meters_data = data.get('water_meters', [])
@@ -114,7 +119,7 @@ class PropertyCreateView(APIView):
             water_meters.append(water_meter)
 
         # Serialize Property and Water Meters
-        property_serializer = PropertySerializer(property)
+        property_serializer = PropertySerializer(property_instance)
         water_meter_serializers = [WaterMeterSerializer(water_meter).data for water_meter in water_meters]
 
         return Response({
@@ -134,9 +139,17 @@ class PropertyDetailView(APIView):
         serializer = PropertySerializer(property_instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def patch(self, request, id):
+        property_instance = self.get_object(id)
+        serializer = PropertyUpdateSerializer(property_instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def put(self, request, id):
         property_instance = self.get_object(id)
-        serializer = PropertySerializer(property_instance, data=request.data)
+        serializer = PropertyUpdateSerializer(property_instance, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -339,19 +352,18 @@ class ClientNumberAverageConsumptionView(APIView):
                 insufficient_data = True
                 continue
 
-            value_diff = average_consumption['average_monthly_consumption'] / 30 * (average_consumption['approximate'] * 30 + (not average_consumption['approximate'] * 1))
-            days_diff = 30 if average_consumption['approximate'] else 1
+            total_value_diff += average_consumption['average_monthly_consumption']
+            total_days_diff += average_consumption['days_diff']
 
-            total_value_diff += value_diff
-            total_days_diff += days_diff
+        if insufficient_data and total_value_diff == 0:
+            return Response({'error': 'Not enough data to calculate'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if insufficient_data and total_days_diff == 0:
-            return Response({'error': 'Not enough data to calculate'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        # To prevent division by zero, add a small check
+        if total_days_diff == 0:
+            total_days_diff = 1
 
-        average_daily_consumption = total_value_diff / (total_days_diff + 1)
-        combined_average_monthly_consumption = average_daily_consumption * 30
-        combined_average_monthly_consumption = round(combined_average_monthly_consumption, 3)
+        average_daily_consumption = round(total_value_diff / total_days_diff, 3)
+        combined_average_monthly_consumption = round(average_daily_consumption * 30, 3)
 
         num_people = property_instance.num_people if property_instance else 0
         average_usage_per_person_per_week = round(combined_average_monthly_consumption / num_people / 4, 3) if num_people else 0
@@ -363,7 +375,7 @@ class ClientNumberAverageConsumptionView(APIView):
         room_usage = {room.name: average_usage_per_room for room in rooms}
 
         max_water_usage_for_property_per_month = MAX_WATER_USAGE_PER_PERSON_FOR_WEEK * num_people * 4
-        current_water_usage_for_person_per_room = combined_average_monthly_consumption / num_rooms / num_people
+        current_water_usage_for_person_per_room = round(combined_average_monthly_consumption / num_rooms / num_people, 3) if num_people > 0 and num_rooms > 0 else 0
 
         result = {
             "approximate": total_days_diff < 30,
