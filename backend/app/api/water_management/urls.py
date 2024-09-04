@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import WaterCompanyViewSet, ClientNumberViewSet, UserWaterMetersAPIView, PropertyCreateView, \
     PropertyDetailView, PropertyRoomsView, PropertyRoomDetailView, WaterMeterReadingView, PropertyTypeListView, \
-    ClientNumberAverageConsumptionView, WaterMeterReadingDetailView
+    ClientNumberAverageConsumptionView, WaterMeterReadingDetailView, ConsumptionAdviceView
 
 # Create a router for WaterCompanyViewSet
 water_company_router = DefaultRouter()
@@ -26,4 +26,5 @@ urlpatterns = [
     path('property-types/', PropertyTypeListView.as_view(), name='property-type-list'),
     path('client-numbers/<int:client_number_id>/average-consumption/', ClientNumberAverageConsumptionView.as_view(),
          name='client-number-average-consumption'),
+    path('consumption-advice/', ConsumptionAdviceView.as_view(), name='consumption-advice'),
 ]

@@ -1,4 +1,6 @@
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.views import View
 from rest_framework import generics, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
@@ -8,8 +10,10 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.profiles_api.models import Profile
-from api.profiles_api.serializers import UserSerializer, ProfileSerializer, DeactivateAccountSerializer, ChangePasswordSerializer
+from api.profiles_api.tasks import update_rankings
+
+from api.profiles_api.models import Profile, UserRank
+from api.profiles_api.serializers import UserSerializer, ProfileSerializer, DeactivateAccountSerializer, ChangePasswordSerializer, UserRankSerializer
 from rest_framework.views import APIView
 
 
@@ -73,3 +77,27 @@ class ChangePasswordView(APIView):
             return Response({"detail": "Password changed successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserRankingView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request):
+        user = request.user  # Get the authenticated user from the request
+
+        try:
+            user_rank = user.user_rank  # Assuming a OneToOne relationship with the UserRank model
+
+            if user_rank.town_rank == 0 or user_rank.company_rank == 0:
+                return Response({'error': 'Insufficient data to calculate rank.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = UserRankSerializer(user_rank)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserRank.DoesNotExist:
+            return Response({'error': 'Rank data not found for user.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class TriggerUpdateRankingsView(View):
+    def get(self, request, *args, **kwargs):
+        update_rankings()
+        return JsonResponse({'status': 'Rankings update triggered'}, status=200)

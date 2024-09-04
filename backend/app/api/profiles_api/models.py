@@ -91,6 +91,11 @@ class Profile(models.Model):
             super().save(*args, **kwargs)
 
 
+class UserRank(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_rank')
+    town_rank = models.IntegerField(default=0)
+    company_rank = models.IntegerField(default=0)
+    last_updated = models.DateTimeField(auto_now=True)
 
-
-
+    def __str__(self):
+        return f"Rank for {self.user.username}"

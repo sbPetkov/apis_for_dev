@@ -1,6 +1,7 @@
 from django.urls import path
 
-from api.profiles_api.views import CreateUserView, ProfileRetrieveUpdateDestroy, CustomAuthToken, DeactivateAccountView, ChangePasswordView
+from api.profiles_api.views import CreateUserView, ProfileRetrieveUpdateDestroy, CustomAuthToken, DeactivateAccountView, \
+    ChangePasswordView, TriggerUpdateRankingsView, UserRankingView
 
 
 urlpatterns = [
@@ -9,4 +10,6 @@ urlpatterns = [
     path('login/', CustomAuthToken.as_view()),
     path('deactivate/', DeactivateAccountView.as_view(), name='deactivate-account'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('trigger-update-rankings/', TriggerUpdateRankingsView.as_view(), name='trigger-update-rankings'),
+    path('user-rank/', UserRankingView.as_view(), name='user-rank'),
 ]

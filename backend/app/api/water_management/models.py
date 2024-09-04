@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 
 from api.profiles_api.models import get_unique_filename
+from django.utils import timezone
 
 
 class WaterCompany(models.Model):
@@ -96,11 +97,50 @@ class WaterMeter(models.Model):
     client_number = models.ForeignKey(ClientNumber,
                                       on_delete=models.CASCADE,
                                       related_name='water_meters')
-
     meter_number = models.CharField(max_length=WATER_METER_NUMBER_MAX_LENGTH)
 
     def __str__(self):
         return f"Water Meter {self.meter_number} for {self.client_number}"
+
+    @staticmethod
+    def date_to_int(date):
+        int_date = int(date.strftime('%Y%m%d')[6:])
+        return int_date
+
+    @staticmethod
+    def get_relevant_reading(last_reading):
+        # Get all readings for the specific water meter ordered by date
+        readings = last_reading.__class__.objects.filter(
+            water_meter=last_reading.water_meter
+        ).order_by('date')
+
+        # Get all readings for the current month
+        current_month_readings = readings.filter(date__month=last_reading.date.month)
+
+        # Check for the first reading of the current month
+        first_reading_of_month = current_month_readings.first()
+
+        # Convert dates to integers for comparison
+        last_reading_date_int = WaterMeter.date_to_int(last_reading.date)
+        first_reading_of_month_date_int = WaterMeter.date_to_int(
+            first_reading_of_month.date) if first_reading_of_month else None
+
+        # Check if the last reading is on the same day as the first reading of the month
+        if first_reading_of_month and last_reading_date_int == first_reading_of_month_date_int:
+            # Get the last reading from the previous month
+            previous_month_readings = readings.filter(date__lt=first_reading_of_month.date)
+            previous_month_reading = previous_month_readings.last()
+
+            if previous_month_reading:
+                return previous_month_reading
+
+            return None
+
+        # If the first reading of the month is available and different from the last reading
+        if first_reading_of_month:
+            return first_reading_of_month
+
+        return None
 
     def calculate_average_monthly_consumption(self):
         # Get all readings ordered by date
@@ -109,11 +149,12 @@ class WaterMeter(models.Model):
         if readings.count() < 2:
             return "Not enough data to calculate average monthly consumption."
 
-        # Extract readings from the current month
         latest_reading = readings.last()
-        first_reading_of_month = readings.filter(date__month=latest_reading.date.month).first()
 
-        if not first_reading_of_month or first_reading_of_month == latest_reading:
+        # Use the static method to get the relevant reading
+        first_reading_of_month = self.get_relevant_reading(latest_reading)
+
+        if not first_reading_of_month:
             return "Not enough data to calculate average monthly consumption."
 
         value_diff = latest_reading.value - first_reading_of_month.value
@@ -152,7 +193,7 @@ class WaterMeterReading(models.Model):
         validators=[MinValueValidator(0)]
     )
 
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"Reading {self.value} for {self.water_meter} by {self.user}"
@@ -171,3 +212,13 @@ class WaterMeterReading(models.Model):
                 )
 
         super().save(*args, **kwargs)
+
+
+class ConsumptionAdvice(models.Model):
+    title = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='advice_images/')
+    min_value = models.FloatField()
+    max_value = models.FloatField()
+
+    def __str__(self):
+        return self.title

@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import ClientNumber, WaterMeter, WaterMeterReading, WaterCompany, Property, RoomTypes, PropertyTypes
+from .models import ClientNumber, WaterMeter, WaterMeterReading, WaterCompany, Property, RoomTypes, PropertyTypes, \
+    ConsumptionAdvice
 
 
 @admin.register(ClientNumber)
@@ -38,3 +39,14 @@ class RoomTypesAdmin(admin.ModelAdmin):
 @admin.register(PropertyTypes)
 class PropertyTypesAdmin(admin.ModelAdmin):
     list_display = ('type', 'image')
+
+
+@admin.register(ConsumptionAdvice)
+class ConsumptionAdviceAdmin(admin.ModelAdmin):
+    list_display = ('title', 'min_value', 'max_value', 'image_preview')
+    search_fields = ('title',)
+    list_filter = ('min_value', 'max_value')
+
+    def image_preview(self, obj):
+        return obj.image.url if obj.image else 'No Image'
+    image_preview.short_description = 'Image Preview'

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import WaterCompany, ClientNumber, WaterMeter, Property, PropertyTypes, RoomTypes, WaterMeterReading
+from .models import WaterCompany, ClientNumber, WaterMeter, Property, PropertyTypes, RoomTypes, WaterMeterReading, \
+    ConsumptionAdvice
 
 
 class WaterCompanySerializer(serializers.ModelSerializer):
@@ -78,6 +79,12 @@ class PropertyUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ConsumptionAdviceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsumptionAdvice
+        fields = ['id', 'title', 'image', 'min_value', 'max_value']
+
+
 class RoomTypesSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomTypes
@@ -96,14 +103,18 @@ class WaterMeterReadingSerializer(serializers.ModelSerializer):
 
 class WaterMeterReadingWithPropertySerializer(serializers.ModelSerializer):
     water_meter_id = serializers.IntegerField(source='water_meter.id', read_only=True)
-    property_id = serializers.IntegerField(source='water_meter.client_number.property.id', read_only=True)
-    property_type = serializers.CharField(source='water_meter.client_number.property.type.type', read_only=True)
-    property_address = serializers.CharField(source='water_meter.client_number.property.user.username', read_only=True)
+    water_meter_number = serializers.CharField(source='water_meter.meter_number', read_only=True)
+    property_type = serializers.SerializerMethodField()
 
     class Meta:
         model = WaterMeterReading
-        fields = ['id', 'water_meter_id', 'user', 'value', 'date', 'property_id', 'property_type', 'property_address']
+        fields = ['id', 'water_meter_id', 'water_meter_number', 'property_type', 'user', 'value', 'date']
         read_only_fields = ['user']
+
+    def get_property_type(self, obj):
+        # Get the Property object using the ClientNumber from the WaterMeter
+        property_obj = Property.objects.filter(client_number=obj.water_meter.client_number).first()
+        return property_obj.type.type if property_obj and property_obj.type else None
 
 
 class WaterMeterAverageConsumptionSerializer(serializers.Serializer):

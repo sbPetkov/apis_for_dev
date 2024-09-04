@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from api.profiles_api.models import Profile
+from api.profiles_api.models import Profile, UserRank
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -61,3 +61,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is not correct")
         return value
+
+
+class UserRankSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserRank
+        fields = ['town_rank', 'company_rank', 'last_updated']

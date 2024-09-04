@@ -1,3 +1,5 @@
+import random
+
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status, permissions, generics
 from rest_framework import status, serializers
@@ -5,10 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import WaterCompany, ClientNumber, WaterMeter, PropertyTypes, Property, RoomTypes, WaterMeterReading
+from .models import WaterCompany, ClientNumber, WaterMeter, PropertyTypes, Property, RoomTypes, WaterMeterReading, \
+    ConsumptionAdvice
 from .serializers import WaterCompanySerializer, ClientNumberSerializer, WaterMeterSerializer, PropertySerializer, \
     RoomTypesSerializer, WaterMeterReadingSerializer, PropertyTypeSerializer, WaterMeterAverageConsumptionSerializer, \
-    WaterMeterReadingWithPropertySerializer, PropertyUpdateSerializer
+    WaterMeterReadingWithPropertySerializer, PropertyUpdateSerializer, ConsumptionAdviceSerializer
 
 
 class WaterCompanyViewSet(viewsets.ModelViewSet):
@@ -328,21 +331,20 @@ class WaterMeterReadingView(APIView):
 
 class WaterMeterReadingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = WaterMeterReading.objects.all()
-    serializer_class = WaterMeterReadingSerializer
+    serializer_class = WaterMeterReadingWithPropertySerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class ClientNumberAverageConsumptionView(APIView):
 
     def get(self, request, client_number_id):
-
         MAX_WATER_USAGE_PER_PERSON_FOR_WEEK = 650
 
         client_number = get_object_or_404(ClientNumber, id=client_number_id)
         property_instance = client_number.property_set.first()  # Assuming a one-to-one relationship
         water_meters = client_number.water_meters.all()
 
-        total_value_diff = 0
+        total_average_monthly_consumption = 0
         total_days_diff = 0
         insufficient_data = False
 
@@ -352,34 +354,29 @@ class ClientNumberAverageConsumptionView(APIView):
                 insufficient_data = True
                 continue
 
-            total_value_diff += average_consumption['average_monthly_consumption']
+            total_average_monthly_consumption += average_consumption['average_monthly_consumption']
             total_days_diff += average_consumption['days_diff']
 
-        if insufficient_data and total_value_diff == 0:
+        if insufficient_data and total_average_monthly_consumption == 0:
             return Response({'error': 'Not enough data to calculate'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # To prevent division by zero, add a small check
-        if total_days_diff == 0:
-            total_days_diff = 1
-
-        average_daily_consumption = round(total_value_diff / total_days_diff, 3)
-        combined_average_monthly_consumption = round(average_daily_consumption * 30, 3)
-
         num_people = property_instance.num_people if property_instance else 0
-        average_usage_per_person_per_week = round(combined_average_monthly_consumption / num_people / 4, 3) if num_people else 0
+        average_usage_per_person_per_week = round(total_average_monthly_consumption / num_people / 4,
+                                                  3) if num_people else 0
 
         rooms = property_instance.room_types.all() if property_instance else []
         num_rooms = rooms.count()
-        average_usage_per_room = round(combined_average_monthly_consumption / num_rooms, 3) if num_rooms else 0
+        average_usage_per_room = round(total_average_monthly_consumption / num_rooms, 3) if num_rooms else 0
 
         room_usage = {room.name: average_usage_per_room for room in rooms}
 
         max_water_usage_for_property_per_month = MAX_WATER_USAGE_PER_PERSON_FOR_WEEK * num_people * 4
-        current_water_usage_for_person_per_room = round(combined_average_monthly_consumption / num_rooms / num_people, 3) if num_people > 0 and num_rooms > 0 else 0
+        current_water_usage_for_person_per_room = round(total_average_monthly_consumption / num_rooms / num_people,
+                                                        3) if num_people > 0 and num_rooms > 0 else 0
 
         result = {
-            "approximate": total_days_diff < 30,
-            "average_monthly_consumption": combined_average_monthly_consumption,
+            "approximate": total_days_diff < 30 * len(water_meters),  # Adjusted to match the total number of meters
+            "average_monthly_consumption": total_average_monthly_consumption,
             "num_people": num_people,
             "average_usage_per_person_per_week": average_usage_per_person_per_week,
             "average_usage_per_room": room_usage,
@@ -388,4 +385,28 @@ class ClientNumberAverageConsumptionView(APIView):
         }
 
         serializer = WaterMeterAverageConsumptionSerializer(result)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ConsumptionAdviceView(APIView):
+
+    def post(self, request):
+        water_usage = request.data.get('water_usage')
+
+        if water_usage is None:
+            return Response({"error": "water_usage is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter advices based on water usage range
+        matching_advices = ConsumptionAdvice.objects.filter(min_value__lte=water_usage, max_value__gte=water_usage)
+        advice_count = matching_advices.count()
+
+        if advice_count == 0:
+            return Response({"message": "There is no advice in the given range"}, status=status.HTTP_200_OK)
+
+        # Randomly select up to two advices
+        selected_advices = random.sample(list(matching_advices), min(2, advice_count))
+
+        # Serialize the advices
+        serializer = ConsumptionAdviceSerializer(selected_advices, many=True)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
