@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import validate_email
 from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 
 from api.profiles_api.models import Profile, UserRank
 
@@ -11,7 +13,19 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['username', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate_username(self, value):
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Enter a valid email address.")
+        return value
+
     def create(self, validated_data):
+        email = validated_data.get('username')
+
+        if User.objects.filter(username=email).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+
         user = User.objects.create_user(**validated_data)
         return user
 
@@ -64,6 +78,20 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class UserRankSerializer(serializers.ModelSerializer):
+    water_company_name = serializers.SerializerMethodField()
+
     class Meta:
         model = UserRank
-        fields = ['town_rank', 'company_rank', 'last_updated']
+        fields = ['town_rank', 'company_rank', 'last_updated', 'water_company_name']
+
+    def get_water_company_name(self, obj):
+        # Access the user from the UserRank model (assuming OneToOneField relation)
+        user = obj.user
+
+        # Fetch the related water company through the client numbers
+        client_numbers = user.client_numbers.all()
+        if not client_numbers:
+            return None
+
+        # Return the first related water company name (or adjust logic as needed)
+        return client_numbers.first().water_company.name

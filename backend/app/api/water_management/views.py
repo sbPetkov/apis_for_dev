@@ -241,7 +241,6 @@ class WaterMeterReadingView(APIView):
     def post(self, request):
         user = request.user
 
-        # Retrieve all water meters related to properties associated with the user
         water_meters = WaterMeter.objects.filter(client_number__users=user)
 
         readings_data = request.data.get('readings', [])

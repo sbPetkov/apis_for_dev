@@ -91,7 +91,16 @@ class UserRankingView(APIView):
             if user_rank.town_rank == 0 or user_rank.company_rank == 0:
                 return Response({'error': 'Insufficient data to calculate rank.'}, status=status.HTTP_400_BAD_REQUEST)
 
+            client_numbers = user.client_numbers.all()  # Get all client numbers associated with the user
+            if not client_numbers:
+                return Response({'error': 'No client number found for this user.'}, status=status.HTTP_404_NOT_FOUND)
+
+            water_company = client_numbers.first().water_company
+            company_name = water_company.name
+
             serializer = UserRankSerializer(user_rank)
+            data = serializer.data
+            data['water_company_name'] = company_name
             return Response(serializer.data, status=status.HTTP_200_OK)
         except UserRank.DoesNotExist:
             return Response({'error': 'Rank data not found for user.'}, status=status.HTTP_404_NOT_FOUND)

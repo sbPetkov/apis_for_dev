@@ -198,20 +198,20 @@ class WaterMeterReading(models.Model):
     def __str__(self):
         return f"Reading {self.value} for {self.water_meter} by {self.user}"
 
-    def save(self, *args, **kwargs):
-        if self.pk:
-            last_reading = WaterMeterReading.objects.filter(
-                water_meter=self.water_meter,
-                date__lt=self.date
-            ).order_by('-date').first()
-
-            if last_reading and (self.value < last_reading.value or self.value > last_reading.value + 1000):
-                raise ValidationError(
-                    "The value should not be less than the previous reading or greater "
-                    "than 1000 to the last saved reading."
-                )
-
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.pk:
+    #         last_reading = WaterMeterReading.objects.filter(
+    #             water_meter=self.water_meter,
+    #             date__lt=self.date
+    #         ).order_by('-date').first()
+    #
+    #         if last_reading and (self.value < last_reading.value or self.value > last_reading.value + 1000):
+    #             raise ValidationError(
+    #                 "The value should not be less than the previous reading or greater "
+    #                 "than 1000 to the last saved reading."
+    #             )
+    #
+    #     super().save(*args, **kwargs)
 
 
 class ConsumptionAdvice(models.Model):
